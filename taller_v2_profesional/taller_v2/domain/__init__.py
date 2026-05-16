@@ -2,5 +2,6 @@
 
 from .pieza import Pieza
 from .venta import Venta
+from .usuario import Usuario
 
-__all__ = ["Pieza", "Venta"]
+__all__ = ["Pieza", "Venta", "Usuario"]

@@ -1,4 +1,4 @@
-"""ui — Capa de presentación: ventana principal y tabs."""
+"""ui — Capa de presentación."""
 
 from .app import TallerApp
 

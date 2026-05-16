@@ -23,7 +23,7 @@ from ui.dashboard import DashboardTab
 from ui.inventario import InventarioTab
 from ui.ventas import VentasTab
 from ui.reportes import ReportesTab
-
+from services.auth_service import AuthService
 
 # ══════════════════════════════════════════════════════════════════
 #  CONFIGURACIÓN DE TEMA
@@ -107,8 +107,9 @@ class TallerApp(tk.Tk):
         DB path → Repos → Services → UI Tabs
     """
 
-    def __init__(self) -> None:
+    def __init__(self, auth_svc: AuthService) -> None:
         super().__init__()
+        self._auth = auth_svc
         self.title("🖥️  Gestión de Taller – v2.0")
         self.geometry("1180x750")
         self.configure(bg=THEME["bg"])
@@ -126,56 +127,45 @@ class TallerApp(tk.Tk):
         self._build_statusbar()
         self.refresh()
 
-    # ── Header ────────────────────────────────────────────────────
+    # ── Header ───────────────────────────────────────────────────
     def _build_header(self) -> None:
         hdr = tk.Frame(self, bg=THEME["surface"], height=56)
         hdr.pack(fill=tk.X)
         hdr.pack_propagate(False)
 
         tk.Label(
-            hdr, text="🖥️  MACRO PORTATIL",
-            bg=THEME["surface"], fg=THEME["accent"],
+            hdr,
+            text="🖥️  MACRO PORTATIL",
+            bg=THEME["surface"],
+            fg=THEME["accent"],
             font=("Segoe UI Black", 16),
         ).pack(side=tk.LEFT, padx=20)
-        #agregagando un botón para actualizar
-        ttk.Button(
-            hdr, text="🔄 Actualizar", command=self.refresh
-        ).pack(side=tk.LEFT, padx=12)
+
+        ttk.Button(hdr, text="🔄 Actualizar", command=self.refresh).pack(
+            side=tk.LEFT, padx=8
+        )
+
+        ttk.Button(hdr, text="🚪 Cerrar Sesión", command=self._logout).pack(
+            side=tk.RIGHT, padx=12
+        )
+
+        tk.Label(
+            hdr,
+            text=f"👤 {self._auth.usuario.nombre}  |  🎭 {self._auth.rol.upper()}",
+            bg=THEME["surface"],
+            fg=THEME["success"],
+            font=("Segoe UI Semibold", 10),
+        ).pack(side=tk.RIGHT, padx=8)
 
         self._clock_lbl = tk.Label(
-            hdr, text="", bg=THEME["surface"],
-            fg=THEME["text_dim"], font=("Segoe UI", 13),
+            hdr,
+            text="",
+            bg=THEME["surface"],
+            fg=THEME["text_dim"],
+            font=("Segoe UI", 13),
         )
         self._clock_lbl.pack(side=tk.RIGHT, padx=20)
         self._tick()
-
-    def _tick(self) -> None:
-        ahora = datetime.now()
-        dias = ["Lunes","Martes","Miercoles","Jueves","Viernes","Sábado","Domingo"]
-        meses = ["Ene","Feb","Mar","Abr","May","Jun",
-                 "Jul","Ago","Sep","Oct","Nov","Dic"]
-        dia_nombre = dias[ahora.weekday()]
-        mes_nombre = meses[ahora.month - 1]
-        
-        self._clock_lbl.config(
-            text=f"📅{dia_nombre} {ahora.day:02d} {mes_nombre} {ahora.year}  🕐 {ahora.strftime('%H:%M:%S')}"
-        )
-        self.after(1000, self._tick)
-
-    # ── Tabs ──────────────────────────────────────────────────────
-    def _build_tabs(self) -> None:
-        nb = ttk.Notebook(self)
-        nb.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
-
-        self._dash  = DashboardTab(nb,  self.inv_svc, self.ven_svc)
-        self._inv   = InventarioTab(nb, self.inv_svc, self)
-        self._ven   = VentasTab(nb,     self.ven_svc, self.inv_svc, self)
-        self._rep   = ReportesTab(nb,   self.ven_svc, self.inv_svc)
-
-        nb.add(self._dash.frame, text="  📊 Dashboard  ")
-        nb.add(self._inv.frame,  text="  📦 Inventario  ")
-        nb.add(self._ven.frame,  text="  🛒 Registrar Salida  ")
-        nb.add(self._rep.frame,  text="  📈 Reportes  ")
 
     # ── Status Bar ────────────────────────────────────────────────
     def _build_statusbar(self) -> None:
@@ -198,3 +188,71 @@ class TallerApp(tk.Tk):
         self._inv.refresh()
         self._ven.refresh()
         self._dash.refresh()
+
+    def _logout(self) -> None:
+        from tkinter import messagebox
+
+        if messagebox.askyesno("Cerrar Sesión", "¿Deseas cerrar sesión?"):
+            self._auth.logout()
+            self.destroy()
+            from ui.login import LoginWindow
+
+            login = LoginWindow(auth_svc=self._auth, on_success=iniciar_app)
+            login.mainloop()
+
+
+    def _build_tabs(self) -> None:
+        nb = ttk.Notebook(self)
+        nb.pack(fill=tk.BOTH, expand=True, padx=12, pady=8)
+        rol = self._auth.rol
+
+        if rol == "admin":
+            self._dash = DashboardTab(nb, self.inv_svc, self.ven_svc)
+            nb.add(self._dash.frame, text="  📊 Dashboard  ")
+
+        if rol in ("admin", "vendedor"):
+            self._inv = InventarioTab(nb, self.inv_svc, self)
+            nb.add(self._inv.frame, text="  📦 Inventario  ")
+
+        if rol in ("admin", "vendedor"):
+            self._ven = VentasTab(nb, self.ven_svc, self.inv_svc, self)
+            nb.add(self._ven.frame, text="  🛒 Registrar Salida  ")
+
+        if rol == "admin":
+            self._rep = ReportesTab(nb, self.ven_svc, self.inv_svc)
+            nb.add(self._rep.frame, text="  📈 Reportes  ")
+
+        if rol == "admin":
+            from ui.configuracion import ConfiguracionTab
+
+            self._cfg = ConfiguracionTab(nb, self._auth)
+            nb.add(self._cfg.frame, text="  ⚙️ Configuración  ")
+
+        # ── Tecnico: mostrar inventario en modo solo lectura ──────────
+        if rol == "tecnico":
+            self._inv = InventarioTab(nb, self.inv_svc, self)
+            nb.add(self._inv.frame, text="  📦 Inventario (Solo lectura)  ")
+
+    def _tick(self) -> None:
+        ahora = datetime.now()
+        dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        meses = [
+            "Ene",
+            "Feb",
+            "Mar",
+            "Abr",
+            "May",
+            "Jun",
+            "Jul",
+            "Ago",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dic",
+        ]
+        dia_nombre = dias[ahora.weekday()]
+        mes_nombre = meses[ahora.month - 1]
+        self._clock_lbl.config(
+            text=f"📅 {dia_nombre} {ahora.day:02d} {mes_nombre} {ahora.year}  🕐 {ahora.strftime('%H:%M:%S')}"
+        )
+        self.after(1000, self._tick)

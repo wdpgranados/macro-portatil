@@ -114,7 +114,6 @@ class ConfiguracionTab:
                 ),
             )
 
-
     def _build_backup(self) -> None:
         frm = ttk.LabelFrame(self.frame, text="  🗑️ Gestión de Comprobantes  ", padding=12)
         frm.pack(fill=tk.X, padx=16, pady=(6, 12))
@@ -128,12 +127,14 @@ class ConfiguracionTab:
         self._lbl_comprobantes = ttk.Label(frm, text="", foreground=THEME["success"])
         self._lbl_comprobantes.pack(side=tk.LEFT, padx=12)
 
-
     def _eliminar_comprobantes(self) -> None:
         from pathlib import Path
 
-        carpeta = Path(__file__).parent.parent / "comprobantes"
+        carpeta = Path(__file__).resolve().parent.parent / "comprobantes"
+        
         archivos = list(carpeta.glob("*.pdf"))
+        
+
         if not archivos:
             messagebox.showinfo("Info", "No hay comprobantes para eliminar.")
             return

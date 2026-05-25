@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-
+from typing import Optional
 
 @dataclass
 class Venta:
@@ -27,9 +27,8 @@ class Venta:
 
     id_pieza: str
     cantidad: int
-    total:    float
+    total: float
+    id_cliente: Optional[str] = None
 
-    fecha:    datetime = field(default_factory=datetime.now)
-    id_venta: str      = field(
-        default_factory=lambda: f"V{uuid.uuid4().hex[:8].upper()}"
-    )
+    fecha: datetime = field(default_factory=datetime.now)
+    id_venta: str = field(default_factory=lambda: f"V{uuid.uuid4().hex[:8].upper()}")

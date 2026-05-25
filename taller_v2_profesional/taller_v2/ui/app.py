@@ -24,6 +24,7 @@ from ui.inventario import InventarioTab
 from ui.ventas import VentasTab
 from ui.reportes import ReportesTab
 from services.auth_service import AuthService
+from ui.clientes import ClientesTab
 
 # ══════════════════════════════════════════════════════════════════
 #  CONFIGURACIÓN DE TEMA
@@ -183,11 +184,18 @@ class TallerApp(tk.Tk):
         self._status_var.set(msg)
 
     # ── Refresh global ────────────────────────────────────────────
+
     def refresh(self) -> None:
-        """Actualiza todos los tabs con los datos más recientes de la DB."""
-        self._inv.refresh()
-        self._ven.refresh()
-        self._dash.refresh()
+        if hasattr(self, "_inv"):
+            self._inv.refresh()
+        if hasattr(self, "_ven"):
+            self._ven.refresh()
+        if hasattr(self, "_dash"):
+            self._dash.refresh()
+        if hasattr(self, "_cfg"):
+            self._cfg.refresh()
+        if hasattr(self, "_cli"):  # ← AGREGA ESTA
+            self._cli.refresh()
 
     def _logout(self) -> None:
         from tkinter import messagebox
@@ -199,7 +207,6 @@ class TallerApp(tk.Tk):
 
             login = LoginWindow(auth_svc=self._auth, on_success=iniciar_app)
             login.mainloop()
-
 
     def _build_tabs(self) -> None:
         nb = ttk.Notebook(self)
@@ -213,6 +220,10 @@ class TallerApp(tk.Tk):
         if rol in ("admin", "vendedor"):
             self._inv = InventarioTab(nb, self.inv_svc, self)
             nb.add(self._inv.frame, text="  📦 Inventario  ")
+
+        if rol == "admin":
+            self._cli = ClientesTab(nb)
+            nb.add(self._cli.frame, text="  👤 Clientes  ")   
 
         if rol in ("admin", "vendedor"):
             self._ven = VentasTab(nb, self.ven_svc, self.inv_svc, self)

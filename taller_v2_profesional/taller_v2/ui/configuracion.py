@@ -16,6 +16,7 @@ class ConfiguracionTab:
 
     def _build(self) -> None:
         self._build_usuarios()
+        self._build_backup()
 
     def _build_usuarios(self) -> None:
         frm = ttk.LabelFrame(self.frame, text="  👥 Gestión de Usuarios  ", padding=12)
@@ -112,3 +113,38 @@ class ConfiguracionTab:
                     "✅ Activo" if u.activo else "❌ Inactivo",
                 ),
             )
+
+
+    def _build_backup(self) -> None:
+        frm = ttk.LabelFrame(self.frame, text="  🗑️ Gestión de Comprobantes  ", padding=12)
+        frm.pack(fill=tk.X, padx=16, pady=(6, 12))
+
+        ttk.Button(
+            frm,
+            text="🗑️  Eliminar todos los comprobantes PDF",
+            command=self._eliminar_comprobantes,
+        ).pack(side=tk.LEFT, padx=8, pady=6)
+
+        self._lbl_comprobantes = ttk.Label(frm, text="", foreground=THEME["success"])
+        self._lbl_comprobantes.pack(side=tk.LEFT, padx=12)
+
+
+    def _eliminar_comprobantes(self) -> None:
+        from pathlib import Path
+
+        carpeta = Path(__file__).parent.parent / "comprobantes"
+        archivos = list(carpeta.glob("*.pdf"))
+        if not archivos:
+            messagebox.showinfo("Info", "No hay comprobantes para eliminar.")
+            return
+        if messagebox.askyesno(
+            "Confirmar",
+            f"¿Eliminar {len(archivos)} comprobante(s) PDF?\n"
+            f"Esta acción no se puede deshacer.",
+        ):
+            for f in archivos:
+                f.unlink()
+            self._lbl_comprobantes.config(
+                text=f"✅ {len(archivos)} comprobante(s) eliminado(s)."
+            )
+            messagebox.showinfo("OK", "Comprobantes eliminados correctamente.")

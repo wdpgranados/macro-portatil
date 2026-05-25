@@ -3,5 +3,6 @@
 from .inventario_service import InventarioService
 from .ventas_service import VentasService
 from .auth_service import AuthService
+from .comprobante_service import ComprobanteService
 
-__all__ = ["InventarioService", "VentasService", "AuthService"]
+__all__ = ["InventarioService", "VentasService", "AuthService", "ComprobanteService"]

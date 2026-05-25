@@ -35,9 +35,18 @@ class SQLiteVentasRepo(AbstractVentasRepo):
                     cantidad INTEGER NOT NULL CHECK(cantidad > 0),
                     total    REAL    NOT NULL CHECK(total >= 0),
                     fecha    TEXT    NOT NULL,
+                    id_cliente TEXT    DEFAULT NULL,
                     FOREIGN KEY(id_pieza) REFERENCES inventario(id_pieza)
+                    FOREIGN KEY(id_cliente) REFERENCES clientes(id_cliente)
                 )
             """)
+
+            try:
+                conn.execute(
+                    "ALTER TABLE ventas ADD COLUMN id_cliente TEXT DEFAULT NULL"
+                )
+            except Exception:
+                pass    
             # Índice para acelerar filtros por fecha y reportes
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_ventas_fecha
@@ -49,23 +58,26 @@ class SQLiteVentasRepo(AbstractVentasRepo):
             """)
 
     # ── insertar ──────────────────────────────────────────────────
+
+
     def insertar(self, venta: Venta) -> None:
-        """Persiste una nueva venta. La fecha se guarda en formato ISO 8601."""
         with SQLiteConnection(self._db) as conn:
             conn.execute(
                 """
-                INSERT INTO ventas (id_venta, id_pieza, cantidad, total, fecha)
-                VALUES (?, ?, ?, ?, ?)
-                """,
+                INSERT INTO ventas
+                    (id_venta, id_pieza, cantidad, total, fecha, id_cliente)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
                 (
                     venta.id_venta,
                     venta.id_pieza,
                     venta.cantidad,
                     venta.total,
                     venta.fecha.isoformat(),
+                    venta.id_cliente,
                 ),
             )
-        log.info("Venta registrada: %s | $%.2f", venta.id_venta, venta.total)
+        log.info("Venta registrada: %s | %s", venta.id_venta, venta.total)
 
     # ── get_all ───────────────────────────────────────────────────
     def get_all(

@@ -1,51 +1,37 @@
 """
 domain/pieza.py — Entidad de dominio: Pieza.
-
-Representa una pieza física en el inventario del taller.
-No tiene dependencias externas: puro Python con dataclass.
 """
 
 from __future__ import annotations
-
 from dataclasses import dataclass
 
 
 @dataclass
 class Pieza:
-    """
-    Pieza de inventario.
-
-    Attributes:
-        id_pieza:        Código único (ej: 'RAM-DDR4-16G').
-        nombre:          Descripción legible (ej: 'Memoria RAM DDR4 16GB').
-        categoria:       Grupo al que pertenece (ej: 'Memoria', 'Disco', 'CPU').
-        cantidad:        Unidades disponibles en stock. Debe ser >= 0.
-        precio_unitario: Precio de venta por unidad. Debe ser >= 0.
-    """
-
-    id_pieza:        str
-    nombre:          str
-    categoria:       str
-    cantidad:        int
+    id_pieza: str
+    nombre: str
+    categoria: str
+    cantidad: int
     precio_unitario: float
+    stock_minimo: int = 5
 
-    # ── Propiedad calculada ────────────────────────────────────────
     @property
     def valor_stock(self) -> float:
-        """Valor total de las unidades en stock (cantidad × precio)."""
         return self.cantidad * self.precio_unitario
 
-    # ── Validaciones en construcción ───────────────────────────────
+    @property
+    def stock_critico(self) -> bool:
+        """True si el stock está en o por debajo del mínimo."""
+        return self.cantidad <= self.stock_minimo
+
     def __post_init__(self) -> None:
         if self.precio_unitario < 0:
-            raise ValueError(
-                f"El precio no puede ser negativo. Recibido: {self.precio_unitario}"
-            )
+            raise ValueError("El precio no puede ser negativo.")
         if self.cantidad < 0:
-            raise ValueError(
-                f"La cantidad no puede ser negativa. Recibido: {self.cantidad}"
-            )
+            raise ValueError("La cantidad no puede ser negativa.")
+        if self.stock_minimo < 0:
+            raise ValueError("El stock mínimo no puede ser negativo.")
         if not self.id_pieza or not self.id_pieza.strip():
             raise ValueError("El ID de pieza no puede estar vacío.")
         if not self.nombre or not self.nombre.strip():
-            raise ValueError("El nombre de pieza no puede estar vacío.")
+            raise ValueError("El nombre no puede estar vacío.")

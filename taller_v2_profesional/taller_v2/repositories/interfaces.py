@@ -56,8 +56,18 @@ class AbstractInventarioRepo(ABC):
         ...
 
     @abstractmethod
-    def get_stock_bajo(self, umbral: int) -> list[Pieza]:
+    def get_stock_bajo(self, umbral: int = None) -> list[Pieza]:
         """Retorna piezas con cantidad < umbral, ordenadas por cantidad ASC."""
+        ...
+
+    @abstractmethod
+    def actualizar(self, pieza: Pieza) -> None:
+        """Actualiza una pieza existente SIN acumular stock."""
+        ...
+
+    @abstractmethod
+    def eliminar(self, id_pieza: str) -> None:
+        """Soft delete: marca la pieza como inactiva."""
         ...
 
 
